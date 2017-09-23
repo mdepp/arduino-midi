@@ -7,7 +7,7 @@
  * (pin 29 is most-significant) the output of which connects to the speaker.
  */
 
-int main(int argc, char** argv)
+int main()
 {
   DDRA = B11111111;
 
@@ -29,4 +29,5 @@ int main(int argc, char** argv)
         delayMicroseconds(delay_time_us);
     }
   }
+  return 0;
 }
