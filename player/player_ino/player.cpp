@@ -9,7 +9,7 @@
 
 int main()
 {
-  DDRA = B11111111;
+  DDRA = B11111111; // Initialize for output
 
   uint32_t NOTE_MAX = 128;
   uint32_t freq_hz = 440;
