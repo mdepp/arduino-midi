@@ -2,34 +2,33 @@
  * Some experiments with AVR timers.
  */
 
-// From https://arduino-info.wikispaces.com/Timers-Arduino
+//#include <Arduino.h>
+#include <avr/io.h>
+#include <avr/interrupt.h>
 
-#include <Arduino.h>
 
 int main()
 {
-    DDRA = B11111111; // Initialize pins 22-29 for output
+  // Adapted from http://www.engblaze.com/microcontroller-tutorial-avr-and-arduino-timer-interrupts/
+  
+  // Initialize pin 13 for output
+  DDRB = B10000000;
 
-    // Initialize timer1
-    noInterrupts();
-    TCCR1A = 0;
-    TCCR1B = 0;
+  // Initialize timer 1
+  cli(); // Disable global interrupts
+  TCCR1A = 0;
+  TCCR1B = 0;
+  OCR1A = 15624; // Set compare match register to desired timer count
+  TCCR1B |= (1 << WGM12); // Turn on CTC mode
+  //TIMSK1 = (1 << TOIE1); // Enable overflow interrupts
+  TCCR1B |= (1 << CS10) | (1 << CS12); // clk/1024 scaling
+  TIMSK1 |= (1 << OCIE1A); // Enable compare interrupt
+  sei(); // Enable global interrupts
 
-    TCNT1 = 34286;            // preload timer 65536-16MHz/256/2Hz
-    TCCR1B |= (1 << CS12);    // 256 prescaler 
-    TIMSK1 |= (1 << TOIE1);   // enable timer overflow interrupt
-    interrupts();             // enable all interrupts
-
-    while (true) {}
-
-    return 0;
+  while (true) {}
 }
 
-// interrupt service routine that wraps a user defined function 
-// supplied by attachInterrupt
-ISR(TIMER1_OVF_vect)        
+ISR(TIMER1_COMPA_vect) // Called when timer1 matches comparison
 {
-  TCNT1 = 34286;            // preload timer
-  //digitalWrite(ledPin, digitalRead(ledPin) ^ 1);
-  PORTA = PORTA ^ B11111111;
+  PORTB ^= B10000000; // Toggle LED
 }
