@@ -14,9 +14,8 @@ const uint32_t CLOCK_SPEED = 16000000;
 // Sound buffer
 const uint32_t BUFFER_SIZE = 5000;
 byte buffer[BUFFER_SIZE];
-const uint32_t SAMPLE_RATE = 8000;
+const uint32_t SAMPLE_RATE = 440; //8000;
 volatile uint32_t read_position;
-uint32_t end_position;
 uint32_t write_position;
 uint8_t CHUNK_SIZE = 32; // Must be smaller than buffer size
 
@@ -26,28 +25,15 @@ uint32_t BAUD_RATE = 128000;
 volatile uint8_t* output_filter_register = &DDRA;
 volatile uint8_t* output_register = &PORTA;
 
+
 void initSoundBuffer()
 {
-  // Init with 440hz square wave
-  byte state = 0;
   for (uint32_t i=0; i<BUFFER_SIZE; ++i)
   {
-    if (SAMPLE_RATE/440 > 0)
-    {
-      if (i % (SAMPLE_RATE/440) == 0)
-      {
-        state ^= B11111111;
-      }
-    }
-    else
-    {
-      state ^= B11111111;
-    }
-    buffer[i] = state;
+    buffer[i] = 0;
   }
   write_position = 0;
   read_position = 0;
-  end_position = BUFFER_SIZE - 1;
 }
 
 void initSpeaker()
@@ -58,11 +44,12 @@ void initSpeaker()
 
 void tickSound()
 {
+  PORTB ^= B11111111;
   // Update speaker to next part of buffer
   *output_register = buffer[read_position];
 
     // Circle to start of buffer upon overflow
-    read_position = (read_position+1) % end_position;
+    read_position = (read_position+1) % BUFFER_SIZE;
 }
 
 uint32_t positionDifference(uint32_t lhs, uint32_t rhs)
@@ -80,6 +67,9 @@ int main()
   initSoundBuffer();
   initSpeaker();
 
+  
+  DDRB = B11111111;
+
   // Set up some data in sound buffer
   Serial.write(CHUNK_SIZE); Serial.flush();
   while (write_position < CHUNK_SIZE)
@@ -92,14 +82,14 @@ int main()
   }
 
   // Start reading sound buffer
-  Timer3::initTimer(CLOCK_SPEED, SAMPLE_RATE, &tickSound);
+  Timer3::initTimer(CLOCK_SPEED, SAMPLE_RATE, tickSound);
 
   // Continue writing data from serial ports
   uint32_t expected_position = write_position;
   while (true)
   {
     // Assumes writing is always ahead of reading
-    if (positionDifference(expected_position, read_position) < CHUNK_SIZE) // Write is falling behind read
+    if (positionDifference(expected_position, read_position) <= CHUNK_SIZE) // Write is falling behind read
     {
       // So signal to receive a new chunk
       Serial.write(CHUNK_SIZE);

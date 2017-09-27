@@ -9,10 +9,10 @@ sound_buffer = bytearray([0]*3000000)
 current_pos = 0
 state = 0
 for i in range(len(sound_buffer)):
-    if (int(SAMPLE_RATE/440) != 0) and (i % int(SAMPLE_RATE/440) == 0):
-        state = 0 if state == 7 else 7
+    state = 0 if state == 50 else 50
+
     sound_buffer[i] = state
-print(sound_buffer)
+# print(sound_buffer)
 
 try:
     port_name = sys.argv[1] if len(sys.argv) > 1 else 'COM3'
@@ -24,8 +24,8 @@ try:
             byte_read = ser.read()
             if byte_read:
                 bytes_to_send = ord(byte_read)
+                # print(bytes_to_send)
                 # print("Received request for {} bytes.".format(bytes_to_send))
-                time.sleep(1/440)
                 end_pos = min(current_pos+bytes_to_send, len(sound_buffer)-1)
                 if current_pos <= end_pos:
                     # print(sound_buffer[current_pos:end_pos])

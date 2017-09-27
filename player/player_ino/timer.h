@@ -3,14 +3,14 @@
 
 namespace Timer3
 {
-    typedef void (*Callback) ();
+    typedef void (*Callback) (void);
     Callback callback;
 
     
     // Called with frequency as set by initTimer. Assumes callback is set.
     ISR(TIMER3_COMPA_vect)
     {
-        callback();
+        callback(); // Call the callback
     }
     
     struct ScalingData
@@ -68,8 +68,8 @@ namespace Timer3
         callback = cb;
         // Initialize timer1
         cli(); // Disable global interrupts
-        TCCR1A = 0;
-        TCCR1B = 0;
+        TCCR3A = 0;
+        TCCR3B = 0;
         // Calculate scaling
         ScalingData sd = calculateScaling(clock_speed, ideal_frequency);
 
