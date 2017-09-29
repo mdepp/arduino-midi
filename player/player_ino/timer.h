@@ -3,78 +3,82 @@
 
 namespace Timer3
 {
-    typedef void (*Callback) (void);
-    Callback callback;
-
-    
-    // Called with frequency as set by initTimer. Assumes callback is set.
-    ISR(TIMER3_COMPA_vect)
+    namespace Internal
     {
-        callback(); // Call the callback
-    }
-    
-    struct ScalingData
-    {
-        uint16_t scaling;
-        uint32_t compare_match;
-        uint32_t real_frequency;
-    };
-    ScalingData calculateScaling(uint32_t clock_speed, uint32_t ideal_frequency)
-    {
-        uint8_t num_options = 5;
-        uint16_t options[] = {1024, 256, 64, 8, 1};
+        typedef void (*Callback) (void);
+        Callback callback;
 
-        uint32_t smallest_difference;
-        int8_t best_index = -1;
-
-        for (int8_t i=0; i<num_options; ++i)
+        
+        // Called with frequency as set by initTimer. Assumes callback is set.
+        ISR(TIMER3_COMPA_vect)
         {
-            uint32_t compare_match_high = clock_speed/options[i]/ideal_frequency; //1+compare match
-            uint32_t real_frequency = clock_speed/options[i]/compare_match_high;
-            uint32_t difference = abs(ideal_frequency-real_frequency);
-
-            if (best_index==-1 || difference < smallest_difference)
-            {
-                best_index = i;
-                smallest_difference = difference;
-            }
+            callback(); // Call the callback
         }
-
-        ScalingData re;
-        re.scaling = options[best_index];
-        re.compare_match = clock_speed/re.scaling/ideal_frequency-1;
-        re.real_frequency = clock_speed/re.scaling/(re.compare_match+1);
-        return re;
-    }
-    uint8_t getScalingFlags(uint16_t scaling)
-    {
-        switch (scaling)
+        
+        struct ScalingData
         {
-            case 1: return (1<<CS30);
-            case 8: return (1<<CS31);
-            case 64: return (1<<CS31) | (1<<CS30);
-            case 246: return (1<<CS32);
-            case 1024: return (1<<CS32) | (1<<CS30);
-            default: return (1<<CS30); // clk/1 for invalid options
+            uint16_t scaling;
+            uint32_t compare_match;
+            uint32_t real_frequency;
+        };
+        ScalingData calculateScaling(uint32_t clock_speed, uint32_t ideal_frequency)
+        {
+            uint8_t num_options = 5;
+            uint16_t options[] = {1024, 256, 64, 8, 1};
+
+            uint32_t smallest_difference;
+            int8_t best_index = -1;
+
+            for (int8_t i=0; i<num_options; ++i)
+            {
+                uint32_t compare_match_high = clock_speed/options[i]/ideal_frequency; //1+compare match
+                uint32_t real_frequency = clock_speed/options[i]/compare_match_high;
+                uint32_t difference = abs(ideal_frequency-real_frequency);
+
+                if (best_index==-1 || difference < smallest_difference)
+                {
+                    best_index = i;
+                    smallest_difference = difference;
+                }
+            }
+
+            ScalingData re;
+            re.scaling = options[best_index];
+            re.compare_match = clock_speed/re.scaling/ideal_frequency-1;
+            re.real_frequency = clock_speed/re.scaling/(re.compare_match+1);
+            return re;
+        }
+        uint8_t getScalingFlags(uint16_t scaling)
+        {
+            switch (scaling)
+            {
+                case 1: return (1<<CS30);
+                case 8: return (1<<CS31);
+                case 64: return (1<<CS31) | (1<<CS30);
+                case 246: return (1<<CS32);
+                case 1024: return (1<<CS32) | (1<<CS30);
+                default: return (1<<CS30); // clk/1 for invalid options
+            }
         }
     }
 
     /*
-     * Initialize timer1. Attempts to match clock1 settings with specified frequency,
+     * Initialize timer. Attempts to match clock settings with specified frequency,
      * and will return the actual frequency that the callback is called.
      */
-    uint32_t initTimer(uint32_t clock_speed, uint32_t ideal_frequency, Callback cb)
+    uint32_t initTimer(uint32_t clock_speed, uint32_t ideal_frequency, Internal::Callback cb)
     {
-        callback = cb;
-        // Initialize timer1
+        Internal::callback = cb;
+        // Initialize timer3
+
         cli(); // Disable global interrupts
         TCCR3A = 0;
         TCCR3B = 0;
         // Calculate scaling
-        ScalingData sd = calculateScaling(clock_speed, ideal_frequency);
+        Internal::ScalingData sd = Internal::calculateScaling(clock_speed, ideal_frequency);
 
         TCCR3B |= (1 << WGM32); // Turn on CTC mode
-        TCCR3B |= getScalingFlags(sd.scaling); // Turn on appropriate scaling
+        TCCR3B |= Internal::getScalingFlags(sd.scaling); // Turn on appropriate scaling
         TIMSK3 |= (1 << OCIE3A); // Enable compare interrupt
         
         OCR3A = sd.compare_match; // Set compare match register to desired timer count
@@ -87,7 +91,7 @@ namespace Timer3
     // Stop timer1
     void quitTimer()
     {
-        // Clear CS10, 1, 2
+        // Clear CS30, 1, 2
         TCCR3B &= ~(1 << CS30);
         TCCR3B &= ~(1 << CS31);
         TCCR3B &= ~(1 << CS32);

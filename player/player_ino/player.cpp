@@ -89,7 +89,7 @@ int main()
 {
   init();
   Serial.begin(BAUD_RATE);
-  *OUTPUT_FILTER_REGISTER = B11111111;
+  *OUTPUT_FILTER_REGISTER = B11111111; // Initialize the speaker registers
 
   // Fill write buffer before starting any reading
   fillWriteBuffer();
