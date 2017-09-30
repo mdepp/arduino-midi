@@ -1,27 +1,39 @@
+"""
+Streams a sound file though a serial port to the 'player' program. It is
+expected that this file is already in the desired format (that is, 8-bit, 8khz
+sample rate). 
+"""
+
 import serial
-import sys
 import time
 import wave
+import argparse
 
 BAUD_RATE = 128000
 BATCH_SIZE = 1000 # Size of the data batches expected by player
 
 BATCH_SIGNAL = 1 # Received when player needs a new batch of data
 
+# Read in sound file and port arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('port', help='the serial port through which the Arduino is connected')
+parser.add_argument('file', help='the sound file to stream to the Arduino')
+args = parser.parse_args()
+port_name = args.port
+file_name = args.file
 
 try:
-    # Fill sound buffer with an 8-bit 8kz song (which is simple and fast since
+    # Fill sound buffer with an 8-bit 8khz song (which is simple and fast since
     # file is already in this format). If not, this would need to convert
     # it to the required format of the player.
     print('Setting up sound buffer')
     sound_buffer = bytearray()
     # Populate sound buffer with data
-    with wave.open('misc/Planescape_Torment-_Main_Theme.wav', 'rb') as f:
+    with wave.open(file_name, 'rb') as f:
         sound_buffer = bytearray(f.readframes(f.getnframes())) # Since sound file is 8-bit, 8khz
 
     # Initialize serial port with first command-line parameter
     print('Opening serial port')
-    port_name = sys.argv[1] if len(sys.argv) > 1 else 'COM3'
     with serial.Serial(port_name, BAUD_RATE) as ser:
         
         # Write sound buffer in batches to player
