@@ -1,6 +1,0 @@
-{
-    "port": "COM3",
-    "board": "arduino:avr:megaADK",
-    "sketch": "player/player_ino/player.cpp",
-    "output": "./build"
-}

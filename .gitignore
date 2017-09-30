@@ -1,5 +1,4 @@
 misc/
 build/
-Pipfile
-Pipfile.lock
 *build*/
+.vscode/
