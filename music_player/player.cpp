@@ -1,8 +1,9 @@
 /*
- * Plays a sound file from memory
+ * Plays a sound file streamed from Serial.
  *
  * Arduino ports 22 through 29 are connected to an R-2R resistor ladder for DAC,
- * (pin 29 is most-significant) the output of which connects to the speaker.
+ * (pin 29 is most-significant) the output of which connects to the speaker (see
+ * README for details).
  */
 
 #include <Arduino.h>
@@ -61,7 +62,6 @@ void swapBuffers()
   byte* temp = read_buffer;
   read_buffer = write_buffer;
   write_buffer = temp;
-
 }
 
 /*
@@ -105,7 +105,7 @@ int main()
   {
     if (buffersSwapped) // Buffers have been swapped so write buffer is ready
     {
-      // Overwrite write buffer with new sound data
+      // Overwrite new write buffer with new sound data
       fillWriteBuffer();
       buffersSwapped = false;
     }

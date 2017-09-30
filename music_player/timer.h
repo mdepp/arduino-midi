@@ -1,3 +1,7 @@
+/*
+ * 
+ */
+
 #ifndef _TIMER_H
 #define _TIMER_H
 
@@ -26,13 +30,15 @@ namespace Timer3
             uint8_t num_options = 5;
             uint16_t options[] = {1024, 256, 64, 8, 1};
 
+            const uint32_t max_compare = 65535; // The maximum value the (16-bit) compare match register can be set to
+
             uint32_t smallest_difference;
             int8_t best_index = -1;
 
             for (int8_t i=0; i<num_options; ++i)
             {
-                uint32_t compare_match_high = clock_speed/options[i]/ideal_frequency; //1+compare match
-                uint32_t real_frequency = clock_speed/options[i]/compare_match_high;
+                uint32_t compare_match = min(max_compare, clock_speed/options[i]/ideal_frequency-1);
+                uint32_t real_frequency = clock_speed/options[i]/(compare_match+1);
                 uint32_t difference = abs(ideal_frequency-real_frequency);
 
                 if (best_index==-1 || difference < smallest_difference)
@@ -44,7 +50,7 @@ namespace Timer3
 
             ScalingData re;
             re.scaling = options[best_index];
-            re.compare_match = clock_speed/re.scaling/ideal_frequency-1;
+            re.compare_match = min(max_compare, clock_speed/re.scaling/ideal_frequency-1);
             re.real_frequency = clock_speed/re.scaling/(re.compare_match+1);
             return re;
         }
