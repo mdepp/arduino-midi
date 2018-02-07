@@ -1,9 +1,12 @@
 /*
- * 
+ * An interface to the third hardware timer of the Arduino Mega (may work for
+ * other devices, but I haven't designed or tested for this, so I don't know).
  */
 
 #ifndef _TIMER_H
 #define _TIMER_H
+
+#include <Arduino.h>
 
 namespace Timer3
 {
